@@ -1,0 +1,8 @@
+# security.txt - Basic security policy placeholder
+# See https://securitytxt.org/ for the full specification
+
+Contact: mailto:security@example.com
+Policy: https://example.com/security
+Preferred-Languages: en
+Canonical: /security.txt
+Expires: 2030-01-01T00:00:00.000Z
