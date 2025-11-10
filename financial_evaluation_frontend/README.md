@@ -20,7 +20,13 @@ Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
 Integration:
 - Create a .env file based on .env.example and set REACT_APP_API_BASE_URL to your backend (default http://localhost:3001).
-- Backend must allow CORS from your frontend origin (default http://localhost:3000).
+- Ensure your backend CORS allow_origins includes your frontend origin (default http://localhost:3000). Do not use wildcard in production.
+- Do not set Content-Type manually for file uploads on the frontend; the browser will set multipart/form-data with proper boundary.
+- Backend should return application/json for API responses; the client gracefully falls back to text if needed.
+- Verify endpoints:
+  - POST /evaluations (multipart/form-data: file, title, notes)
+  - GET /evaluations/{id}
+- OpenAPI at: http://localhost:3001/docs (or the base URL you configured)
 
 ### `npm test`
 

@@ -1,5 +1,9 @@
 /**
 // Centralized API client with env-based baseURL, sane defaults, and normalized errors
+// CORS expectation:
+// - Backend should allow the frontend origin (e.g., http://localhost:3000) via its CORS allow_origins.
+// - Frontend calls should NOT set Content-Type manually for multipart/form-data; the browser sets boundary.
+// - JSON responses should include application/json. This client handles text fallback to avoid parse errors.
 */
 
 /**
