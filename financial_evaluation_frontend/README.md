@@ -18,6 +18,10 @@ In the project directory, you can run:
 Runs the app in development mode.\
 Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
+Integration:
+- Create a .env file based on .env.example and set REACT_APP_API_BASE_URL to your backend (default http://localhost:3001).
+- Backend must allow CORS from your frontend origin (default http://localhost:3000).
+
 ### `npm test`
 
 Launches the test runner in interactive watch mode.

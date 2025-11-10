@@ -1,6 +1,6 @@
-//
+/**
 // Centralized API client with env-based baseURL, sane defaults, and normalized errors
-//
+*/
 
 /**
  * Get API base URL from env. This must be provided by .env as REACT_APP_API_BASE_URL.
@@ -73,9 +73,15 @@ async function apiFetch(path, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
   }
 
   if (!response.ok) {
-    const message =
+    // Special-case common API validation/content errors to surface clearer messages
+    let message =
       (payload && (payload.error || payload.message)) ||
       `Request failed with status ${status}`;
+    if (status === 400) {
+      message = payload?.message || 'Invalid request. Please check the inputs.';
+    } else if (status === 415) {
+      message = 'Unsupported media type. Please upload a valid PDF file.';
+    }
     return makeError(status, message, payload || undefined);
   }
 
@@ -94,6 +100,18 @@ export async function createEvaluation(formData) {
   return apiFetch('/evaluations', {
     method: 'POST',
     body: formData,
+  });
+}
+
+// PUBLIC_INTERFACE
+export async function getEvaluationById(evaluationId) {
+  /** Fetch a previously stored evaluation by ID.
+   * Returns normalized result { ok, status, data|message }.
+   */
+  const safeId = encodeURIComponent(String(evaluationId || '').trim());
+  if (!safeId) return makeError(400, 'Missing evaluation ID');
+  return apiFetch(`/evaluations/${safeId}`, {
+    method: 'GET',
   });
 }
 

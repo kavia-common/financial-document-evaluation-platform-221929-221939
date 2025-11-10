@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import './App.css';
 import UploadForm from './components/UploadForm';
 import ResultsView from './components/ResultsView';
 import StatusToast from './components/StatusToast';
-import { createEvaluation, getBaseUrl } from './api/client';
+import { createEvaluation, getBaseUrl, getEvaluationById } from './api/client';
 import { useApi } from './hooks/useApi';
 
 // PUBLIC_INTERFACE
@@ -18,8 +18,12 @@ function App() {
    */
   const [theme, setTheme] = useState('light');
   const [toast, setToast] = useState({ open: false, type: 'info', message: '' });
+  const [lastId, setLastId] = useState('');
 
   const { run: runCreateEval, loading, error, data } = useApi(createEvaluation);
+  const { run: runGetEval, loading: loadingGet, error: getError, data: fetched } = useApi(getEvaluationById);
+
+  const currentResult = useMemo(() => fetched || data, [fetched, data]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -32,6 +36,9 @@ function App() {
   async function handleSubmit(formData) {
     const res = await runCreateEval(formData);
     if (res?.ok) {
+      // Try to capture ID from response if present
+      const newId = res?.data?.id ? String(res.data.id) : '';
+      if (newId) setLastId(newId);
       setToast({ open: true, type: 'success', message: 'Upload successful. Processing started.' });
     } else {
       setToast({
@@ -39,6 +46,21 @@ function App() {
         type: 'error',
         message: res?.message || 'Upload failed',
       });
+    }
+  }
+
+  async function handleFetchById(e) {
+    e.preventDefault();
+    const id = (lastId || '').trim();
+    if (!id) {
+      setToast({ open: true, type: 'error', message: 'Please enter a valid evaluation ID.' });
+      return;
+    }
+    const res = await runGetEval(id);
+    if (res?.ok) {
+      setToast({ open: true, type: 'success', message: 'Result fetched.' });
+    } else {
+      setToast({ open: true, type: 'error', message: res?.message || 'Fetch failed' });
     }
   }
 
@@ -83,20 +105,54 @@ function App() {
             </p>
           </header>
 
-          <UploadForm onSubmit={handleSubmit} busy={loading} />
+          <UploadForm onSubmit={handleSubmit} busy={loading || loadingGet} />
 
           <section style={{ marginTop: 20 }}>
             <h2 style={styles.sectionTitle}>Latest Result</h2>
-            {loading && <p style={styles.infoText}>Uploading…</p>}
-            {!loading && error && (
+
+            {(loading || loadingGet) && <p style={styles.infoText}>Processing…</p>}
+            {!loading && !loadingGet && (error || getError) && (
               <p style={styles.errorText} role="status" aria-live="polite">
-                {error}
+                {error || getError}
               </p>
             )}
-            {!loading && !error && !data && (
+
+            <div style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                type="text"
+                placeholder="Evaluation ID"
+                value={lastId}
+                onChange={(e) => setLastId(e.target.value)}
+                style={{
+                  padding: '8px 10px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: 8,
+                  background: '#ffffff',
+                  minWidth: 200,
+                }}
+                aria-label="Evaluation ID"
+              />
+              <button
+                onClick={handleFetchById}
+                style={{
+                  background: '#06b6d4',
+                  color: '#083344',
+                  padding: '8px 12px',
+                  borderRadius: 8,
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                }}
+                disabled={loading || loadingGet}
+              >
+                Fetch by ID
+              </button>
+            </div>
+
+            {!loading && !loadingGet && !error && !getError && !currentResult && (
               <p style={styles.infoText}>No results yet. Upload a document to get started.</p>
             )}
-            {!loading && data && <ResultsView result={data} />}
+            {!loading && !loadingGet && currentResult && <ResultsView result={currentResult} />}
           </section>
         </section>
       </main>
